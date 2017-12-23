@@ -21,7 +21,7 @@ particula currency. The output for the above example would be:
     {'BTC': ['1JshKmUXJt8Hqu14HYRP91WzeDqfv7fw42', '1LEmBwtv1WZ24SPL3Mk3z6hNCSBbRgmiSg']}
 
 """
-def getWalletBalance(wallet_file):
+def getWalletAddresses(wallet_file):
     wallet = {}
     with open(wallet_file, 'r') as f:
         for line in f:
@@ -74,4 +74,4 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    print(getWalletBalance('./wallet.csv'))
+    print(getWalletAddresses('./wallet.csv'))
