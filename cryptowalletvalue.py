@@ -61,11 +61,9 @@ def getNumberOfCoins(addresses):
             if currency == 'BTC':
                 balance_per_currency['BTC'] = getBalanceBTC(addresses[currency])
             elif currency == 'LTC':
-                # TODO
-                continue
+                balance_per_currency['LTC'] = getBalanceLTC(addresses[currency])
             elif currency == 'ETH':
-                # TODO
-                continue
+                balance_per_currency['ETH'] = getBalanceETH(addresses[currency])
             elif currency == 'BCH':
                 # TODO
                 continue
@@ -82,27 +80,60 @@ def getNumberOfCoins(addresses):
 
 """
 Function to retrieve the balance of a series of Bitcoin addresses.
-
-It makes use of the blockchain.info API:
-
-    https://blockchain.info/api/blockchain_api
 """
 def getBalanceBTC(addresses):
-    template = 'https://blockchain.info/rawaddr/{:s}'
-    final_balance_satoshi = 0
+    return getBalance(addresses, 'BTC')
+
+"""
+Function to retrieve the balance of a series of Litecoin addresses.
+"""
+def getBalanceLTC(addresses):
+    return getBalance(addresses, 'LTC')
+
+"""
+Function to retrieve the balance of a series of Ethereum addresses.
+"""
+def getBalanceETH(addresses):
+    return getBalance(addresses, 'ETH')
+
+"""
+Function to retrieve the balance from a series of addresses, using the API
+provided by BlockCypher, which currently supports BTC, LTC and ETH.
+
+    https://www.blockcypher.com/dev/bitcoin/?shell#address
+
+For simplicity, and to avoid using different names, I will use `bit` to refer
+to the minimum amount for each crypto-currency:
+    
+    - Satoshi for BTC.
+    - "Litoshi" (although this seems not official) for LTC.
+    - Wei for ETH.
+"""
+def getBalance(addresses, currency):
+    url_template = 'https://api.blockcypher.com/v1/{:s}/main/addrs/{:s}'
+    balance_bits = 0
     for address in addresses:
-        url = template.format(address)
+        """
+        The BlockCypher API requires that the URL contains the currency ticker
+        symbol in lower case, hence the `.lower()` call.
+        """
+        url = url_template.format(currency.lower(), address)
         r = requests.get(url)
         """
-        Balance of this address in Satoshis, that is how Blockchain.info returns
-        it.
+        Balance of this address in bits.
         """
         this_balance = r.json()['final_balance']
-        final_balance_satoshi += this_balance
+        balance_bits += this_balance
     """
-    Return the value in BTC, i.e., `satoshis * 1e-8`
+    For BTC and LTC, each "bit" is 1e-8 parts of the currency.
     """
-    return 1e-8 * final_balance_satoshi
+    if currency in ['BTC','LTC']:
+        return 1e-8 * balance_bits
+    """
+    For ETH, each "bit" is 1e-18 parts of the currency.
+    """
+    if currency in ['ETH']:
+        return 1e-18 * balance_bits
 
 def calcValue(numberOfCoins,changeRate):
     totalValue=0
