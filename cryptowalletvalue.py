@@ -43,14 +43,66 @@ def getChangeRate(coins):
                 outputDict[coin]=val.get(coin).get("EUR")
     return outputDict
 
-def getNumberOfCoins(wallets):
-    #TODO: Get the real value from the wallet
-    outputDict = dict({})
+"""
+Get the balance of the addresses stored in the wallet file.
+Limited support as of yet, only:
+
+    BTC,LTC,ETH,BCH
+"""
+def getNumberOfCoins(addresses):
+    supportedCurrencies = ['BTC','LTC','ETH','BCH']
+    balance_per_currency = {}
+    """
+    Go through the supported coins and retrieve for each of them the balance
+    from the corresponding blockchain explorer.
+    """
+    for currency in supportedCurrencies:
+        if currency in addresses:
+            if currency == 'BTC':
+                balance_per_currency['BTC'] = getBalanceBTC(addresses[currency])
+            elif currency == 'LTC':
+                # TODO
+                continue
+            elif currency == 'ETH':
+                # TODO
+                continue
+            elif currency == 'BCH':
+                # TODO
+                continue
+            else:
+                print("[WARN] Currency not supported, skipping...")
+
+    """
     outputDict["BTC"] = 0.02556957
     outputDict["ETH"] = 0.29592191
     outputDict["LTC"] = 1.10527932
     outputDict["BCH"] = 0.01454478
-    return outputDict
+    """
+    return balance_per_currency
+
+"""
+Function to retrieve the balance of a series of Bitcoin addresses.
+
+It makes use of the blockchain.info API:
+
+    https://blockchain.info/api/blockchain_api
+"""
+def getBalanceBTC(addresses):
+    template = 'https://blockchain.info/rawaddr/{:s}'
+    final_balance_satoshi = 0
+    for address in addresses:
+        url = template.format(address)
+        r = requests.get(url)
+        """
+        Balance of this address in Satoshis, that is how Blockchain.info returns
+        it.
+        """
+        this_balance = r.json()['final_balance']
+        final_balance_satoshi += this_balance
+    """
+    Return the value in BTC, i.e., `satoshis * 1e-8`
+    """
+    return 1e-8 * final_balance_satoshi
 
 def calcValue(numberOfCoins,changeRate):
     totalValue=0
@@ -67,11 +119,11 @@ def calcValue(numberOfCoins,changeRate):
     print("\tTotal: {:.2f} EUR".format(totalValue))
 
 def main():
-    numberOfCoins=getNumberOfCoins(None)
+    addresses = getWalletAddresses('./wallet.csv')
+    numberOfCoins=getNumberOfCoins(addresses)
     mycoins=numberOfCoins.keys()
     changeRate=getChangeRate(mycoins)
     calcValue(numberOfCoins,changeRate)
 
 if __name__ == "__main__":
-    # main()
-    print(getWalletAddresses('./wallet.csv'))
+    main()
