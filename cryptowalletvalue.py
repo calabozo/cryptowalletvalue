@@ -61,44 +61,18 @@ def getNumberOfCoins(addresses):
     """
     for currency in supportedCurrencies:
         if currency in addresses:
-            if currency == 'BTC':
-                balance_per_currency['BTC'] = getBalanceBTC(addresses[currency])
-            elif currency == 'LTC':
-                balance_per_currency['LTC'] = getBalanceLTC(addresses[currency])
-            elif currency == 'ETH':
-                balance_per_currency['ETH'] = getBalanceETH(addresses[currency])
-            elif currency == 'BCH':
-                # TODO
-                continue
-            else:
-                print("[WARN] Currency not supported, skipping...")
-
-    """
-    outputDict["BTC"] = 0.02556957
-    outputDict["ETH"] = 0.29592191
-    outputDict["LTC"] = 1.10527932
-    outputDict["BCH"] = 0.01454478
-    """
+            balance = 0
+            for address in addresses[currency]:
+                if currency == 'BTC' or currency == 'LTC' or currency == 'ETH':
+                    balance += getBalanceFromBlockCypher(address,currency)
+                elif currency == 'BCH':
+                    # TODO
+                    continue
+                else:
+                    print("[WARN] Currency not supported, skipping...")
+            balance_per_currency[currency] = balance
     return balance_per_currency
 
-"""
-Function to retrieve the balance of a series of Bitcoin addresses.
-
-"""
-def getBalanceBTC(addresses):
-    return getBalance(addresses, 'BTC')
-
-"""
-Function to retrieve the balance of a series of Litecoin addresses.
-"""
-def getBalanceLTC(addresses):
-    return getBalance(addresses, 'LTC')
-
-"""
-Function to retrieve the balance of a series of Ethereum addresses.
-"""
-def getBalanceETH(addresses):
-    return getBalance(addresses, 'ETH')
 
 """
 Function to retrieve the balance from a series of addresses, using the API
@@ -113,21 +87,19 @@ to the minimum amount for each crypto-currency:
     - "Litoshi" (although this seems not official) for LTC.
     - Wei for ETH.
 """
-def getBalance(addresses, currency):
+def getBalanceFromBlockCypher(address,currency):
     url_template = 'https://api.blockcypher.com/v1/{:s}/main/addrs/{:s}'
-    balance_bits = 0
-    for address in addresses:
-        """
-        The BlockCypher API requires that the URL contains the currency ticker
-        symbol in lower case, hence the `.lower()` call.
-        """
-        url = url_template.format(currency.lower(), address)
-        r = requests.get(url)
-        """
-        Balance of this address in bits.
-        """
-        this_balance = r.json()['final_balance']
-        balance_bits += this_balance
+
+    """
+    The BlockCypher API requires that the URL contains the currency ticker
+    symbol in lower case, hence the `.lower()` call.
+    """
+    url = url_template.format(currency.lower(),address)
+    r = requests.get(url)
+    """
+    Balance of this address in bits.
+    """
+    balance_bits = r.json()['final_balance']
     """
     For BTC and LTC, each "bit" is 1e-8 parts of the currency.
     """
