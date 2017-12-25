@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import requests
 import time
+import argparse
 
 """
 Get the balance of the addresses contained in a wallet file.
@@ -154,7 +155,16 @@ def calcValue(numberOfCoins,changeRate):
     print("\tTotal: {:.2f} EUR".format(totalValue))
 
 def main():
-    addresses = getWalletAddresses('./wallet.properties')
+    parser = argparse.ArgumentParser(
+        description='Simple Python script to retrieve the crypto-currencies balance.',
+        epilog='''It retrieves the crypto-currencies balance of addresses stored in a properties file, and convert it \
+        to fiat currency value. Just for the sake of keeping track of how much "money" we "have".''')
+    parser.add_argument('--wallets', metavar='WALLET_FILE', help='Properties file with wallets public addresses. \
+        If not given it search for a wallet.properties file.', default='./wallet.properties')
+
+    args = parser.parse_args()
+
+    addresses = getWalletAddresses(args.wallets)
     numberOfCoins=getNumberOfCoins(addresses)
     mycoins=numberOfCoins.keys()
     changeRate=getChangeRate(mycoins)
