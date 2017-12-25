@@ -174,7 +174,7 @@ def main():
         description='Simple Python script to retrieve the crypto-currencies balance.',
         epilog='''It retrieves the crypto-currencies balance of addresses stored in a properties file, and convert it \
         to fiat currency value. Just for the sake of keeping track of how much "money" we "have".''')
-    parser.add_argument('--wallets', metavar='WALLET_FILE', help='Properties file with wallets public addresses. \
+    parser.add_argument('--wallets', metavar='file', help='Properties file with wallets public addresses. \
         If not given it search for a wallet.properties file.', default='./wallet.properties')
     parser.add_argument('--log', metavar='LEVEL', help='Set log level. ERROR, WARNING, INFO, DEBUG', default='ERROR')
 
