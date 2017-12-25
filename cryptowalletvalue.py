@@ -2,6 +2,7 @@
 import requests
 import time
 import argparse
+import logging
 
 """
 Get the balance of the addresses contained in a wallet file.
@@ -39,13 +40,21 @@ def getWalletAddresses(wallet_file):
 
 def getChangeRate(coins):
     url='https://min-api.cryptocompare.com/data/pricemulti?fsyms=%s&tsyms=EUR'%','.join(coins)
-    r = requests.get(url)
-    outputDict=dict({})
-    if (r.status_code==200):
+    outputDict = dict({})
+    for coin in coins:
+        outputDict[coin] = 0
+    try:
+        r = requests.get(url)
+        r.raise_for_status()
         val=r.json()
         for coin in coins:
             if val.get(coin)!=None:
                 outputDict[coin]=val.get(coin).get("EUR")
+    except (requests.exceptions.RequestException,requests.exceptions.HTTPError) as e:
+        logging.error('Error trying to retrieve change rate, status %s', e)
+        logging.error('Using default change rate: 0')
+
+
     return outputDict
 
 """
@@ -66,12 +75,17 @@ def getNumberOfCoins(addresses):
     for currency in addresses.keys():
         balance = 0
         for address in addresses[currency]:
-            if currency in currenciesBlockCypher:
-                balance += getBalanceFromBlockCypher(address,currency)
-            elif currency in currenciesBlockDozer:
-                balance += getBalanceFromBlockDozer(address)
-            else:
-                print("[WARN] Currency not supported, skipping...")
+            try:
+                if currency in currenciesBlockCypher:
+                    balance += getBalanceFromBlockCypher(address,currency)
+                elif currency in currenciesBlockDozer:
+                    balance += getBalanceFromBlockDozer(address)
+                else:
+                    print("[WARN] Currency not supported, skipping...")
+            except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as e:
+                logging.error('Error accesing %s wallet %s'%(currency,address))
+                balance=0
+
         balance_per_currency[currency] = balance
     return balance_per_currency
 
@@ -98,6 +112,7 @@ def getBalanceFromBlockCypher(address,currency):
     """
     url = url_template.format(currency.lower(),address)
     r = requests.get(url)
+    r.raise_for_status()
     """
     Balance of this address in bits.
     """
@@ -126,11 +141,11 @@ def getBalanceFromBlockDozer(address):
 
     for i in range(0,2):
         r = requests.get(url)
-        if not isinstance(r.json(), int):
-            if r.json()["status"]==429:
-                #Time limit exceeded, retrying after a pause
-                time.sleep(1)
+        if r.status_code==429:
+            #Time limit exceeded, retrying after a pause
+            time.sleep(1)
         else:
+            r.raise_for_status()
             balance_bits=r.json()
             break
 
@@ -161,10 +176,18 @@ def main():
         to fiat currency value. Just for the sake of keeping track of how much "money" we "have".''')
     parser.add_argument('--wallets', metavar='WALLET_FILE', help='Properties file with wallets public addresses. \
         If not given it search for a wallet.properties file.', default='./wallet.properties')
+    parser.add_argument('--log', metavar='LEVEL', help='Set log level. ERROR, WARNING, INFO, DEBUG', default='ERROR')
 
     args = parser.parse_args()
 
-    addresses = getWalletAddresses(args.wallets)
+    loglevel=args.log
+    wallet_file=args.wallets
+    numeric_level = getattr(logging, loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % loglevel)
+    logging.basicConfig(format='%(asctime)s %(levelname)s:\t%(message)s', level=numeric_level)
+
+    addresses = getWalletAddresses(wallet_file)
     numberOfCoins=getNumberOfCoins(addresses)
     mycoins=numberOfCoins.keys()
     changeRate=getChangeRate(mycoins)
