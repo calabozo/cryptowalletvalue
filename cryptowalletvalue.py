@@ -54,23 +54,24 @@ Limited support as of yet, only:
     BTC,LTC,ETH,BCH
 """
 def getNumberOfCoins(addresses):
-    supportedCurrencies = ['BTC','LTC','ETH','BCH']
+    currenciesBlockCypher = ['BTC','LTC','ETH']
+    currenciesBlockDozer  = ['BCH']
     balance_per_currency = {}
     """
     Go through the supported coins and retrieve for each of them the balance
     from the corresponding blockchain explorer.
     """
-    for currency in supportedCurrencies:
-        if currency in addresses:
-            balance = 0
-            for address in addresses[currency]:
-                if currency == 'BTC' or currency == 'LTC' or currency == 'ETH':
-                    balance += getBalanceFromBlockCypher(address,currency)
-                elif currency == 'BCH':
-                    balance += getBalanceFromBlockDozer(address)
-                else:
-                    print("[WARN] Currency not supported, skipping...")
-            balance_per_currency[currency] = balance
+
+    for currency in addresses.keys():
+        balance = 0
+        for address in addresses[currency]:
+            if currency in currenciesBlockCypher:
+                balance += getBalanceFromBlockCypher(address,currency)
+            elif currency in currenciesBlockDozer:
+                balance += getBalanceFromBlockDozer(address)
+            else:
+                print("[WARN] Currency not supported, skipping...")
+        balance_per_currency[currency] = balance
     return balance_per_currency
 
 
