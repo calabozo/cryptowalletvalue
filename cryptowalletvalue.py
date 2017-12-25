@@ -22,10 +22,13 @@ particula currency. The output for the above example would be:
 
 """
 def getWalletAddresses(wallet_file):
+    SEPARATOR_CHAR='='
     wallet = {}
     with open(wallet_file, 'r') as f:
         for line in f:
-            currency, address = line.strip().split(',')
+            if line.startswith("#") or line.find(SEPARATOR_CHAR)==-1:
+                continue
+            currency, address = line.strip().split(SEPARATOR_CHAR)
             if currency in wallet:
                 wallet[currency].append(address)
             else:
@@ -151,7 +154,7 @@ def calcValue(numberOfCoins,changeRate):
     print("\tTotal: {:.2f} EUR".format(totalValue))
 
 def main():
-    addresses = getWalletAddresses('./wallet.csv')
+    addresses = getWalletAddresses('./wallet.properties')
     numberOfCoins=getNumberOfCoins(addresses)
     mycoins=numberOfCoins.keys()
     changeRate=getChangeRate(mycoins)
