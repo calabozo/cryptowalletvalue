@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import requests
+import time
 
 """
 Get the balance of the addresses contained in a wallet file.
@@ -66,8 +67,7 @@ def getNumberOfCoins(addresses):
                 if currency == 'BTC' or currency == 'LTC' or currency == 'ETH':
                     balance += getBalanceFromBlockCypher(address,currency)
                 elif currency == 'BCH':
-                    # TODO
-                    continue
+                    balance += getBalanceFromBlockDozer(address)
                 else:
                     print("[WARN] Currency not supported, skipping...")
             balance_per_currency[currency] = balance
@@ -75,7 +75,7 @@ def getNumberOfCoins(addresses):
 
 
 """
-Function to retrieve the balance from a series of addresses, using the API
+Function to retrieve the balance from one address, using the API
 provided by BlockCypher, which currently supports BTC, LTC and ETH.
 
     https://www.blockcypher.com/dev/bitcoin/?shell#address
@@ -110,6 +110,33 @@ def getBalanceFromBlockCypher(address,currency):
     """
     if currency in ['ETH']:
         return 1e-18 * balance_bits
+
+
+"""
+Function to retrieve the balance from one address, using the API
+provided by BlockDozer, which currently supports BCH.
+
+    https://blockdozer.com/insight-api/addr/#address/balance
+"""
+def getBalanceFromBlockDozer(address):
+    url_template = 'https://blockdozer.com/insight-api/addr/{:s}/balance'
+    url = url_template.format(address)
+
+    for i in range(0,2):
+        r = requests.get(url)
+        if not isinstance(r.json(), int):
+            if r.json()["status"]==429:
+                #Time limit exceeded, retrying after a pause
+                time.sleep(1)
+        else:
+            balance_bits=r.json()
+            break
+
+    """
+    For BCH each "bit" is 1e-8 parts of the currency.
+    """
+    return 1e-8 * balance_bits
+
 
 def calcValue(numberOfCoins,changeRate):
     totalValue=0
