@@ -80,6 +80,7 @@ def getNumberOfCoins(addresses):
 
 """
 Function to retrieve the balance of a series of Bitcoin addresses.
+
 """
 def getBalanceBTC(addresses):
     return getBalance(addresses, 'BTC')
