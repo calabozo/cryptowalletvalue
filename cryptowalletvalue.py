@@ -67,11 +67,6 @@ def getNumberOfCoins(addresses):
     currenciesBlockCypher = ['BTC','LTC','ETH']
     currenciesBlockDozer  = ['BCH']
     balance_per_currency = {}
-    """
-    Go through the supported coins and retrieve for each of them the balance
-    from the corresponding blockchain explorer.
-    """
-
     for currency in addresses.keys():
         balance = 0
         for address in addresses[currency]:
