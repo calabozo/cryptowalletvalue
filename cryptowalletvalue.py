@@ -66,6 +66,7 @@ Limited support as of yet, only:
 def getNumberOfCoins(addresses):
     currenciesBlockCypher = ['BTC','LTC','ETH']
     currenciesBlockDozer  = ['BCH']
+    currenciesAlgorand  = ['ALGO']
     balance_per_currency = {}
     for currency in addresses.keys():
         balance = 0
@@ -75,6 +76,8 @@ def getNumberOfCoins(addresses):
                     balance += getBalanceFromBlockCypher(address,currency)
                 elif currency in currenciesBlockDozer:
                     balance += getBalanceFromBlockDozer(address)
+                elif currency in currenciesAlgorand:
+                    balance += getBalanceFromAlgorand(address)
                 else:
                     print("[WARN] Currency not supported, skipping...")
             except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as e:
@@ -136,7 +139,7 @@ def getBalanceFromBlockDozer(address):
 
     for i in range(0,2):
         r = requests.get(url)
-        if r.status_code==429:
+        if r.status_code!=200:
             #Time limit exceeded, retrying after a pause
             time.sleep(1)
         else:
@@ -148,6 +151,35 @@ def getBalanceFromBlockDozer(address):
     For BCH each "bit" is 1e-8 parts of the currency.
     """
     return 1e-8 * balance_bits
+
+"""
+Function to retrieve the balance from one address, using the API
+provided by Algorand.
+
+    https://algoexplorerapi.io/v1/account/#address
+"""
+def getBalanceFromAlgorand(address):
+    url_template = 'https://algoexplorerapi.io/v1/account/{:s}'
+    url = url_template.format(address)
+
+    for i in range(0,2):
+        r = requests.get(url)
+        if r.status_code==429:
+            #Time limit exceeded, retrying after a pause
+            time.sleep(1)
+        else:
+            r.raise_for_status()
+            balance_bits=r.json()['balance']
+            break
+
+    """
+    For ALG each "bit" is 1e-6 parts of the currency.
+    """
+    return 1e-6 * balance_bits
+
+
+
+
 
 
 def calcValue(numberOfCoins,changeRate):
